@@ -5,7 +5,7 @@ import './App.css';
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [resultMedia, setResultMedia] = useState(null); 
+  const [resultMedia, setResultMedia] = useState(null);
   const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(false);
   const [fileType, setFileType] = useState('');
@@ -30,38 +30,34 @@ function App() {
   };
 
   const onUpload = async () => {
-    if (!selectedFile) {
-      alert("Silakan pilih file terlebih dahulu!");
-      return;
-    }
-
+    if (!selectedFile) return;
     setLoading(true);
-    setResultMedia(null);
-    setSummary({});
 
     const formData = new FormData();
     formData.append("file", selectedFile);
-
-    const isVideo = fileType === 'video';
-    const endpoint = isVideo ? "/detect-video" : "/detect";
+    const isVideo = selectedFile.type.startsWith('video');
 
     try {
-      // Mengirim data ke backend (Backend merespons dengan JSON)
-      const res = await axios.post(`http://127.0.0.1:8000${endpoint}`, formData);
+      const res = await axios.post(`http://127.0.0.1:8000${isVideo ? "/detect-video" : "/detect"}`,
+        formData,
+        { responseType: isVideo ? 'blob' : 'json' }
+      );
 
       if (isVideo) {
-        // Mengambil string base64 video dari res.data.video
-        setResultMedia(res.data.video);
+        // Tampilkan Video
+        const videoUrl = URL.createObjectURL(res.data);
+        setResultMedia(videoUrl);
+
+        // Baca Tabel dari Header
+        const summaryHeader = res.headers['x-summary'];
+        if (summaryHeader) setSummary(JSON.parse(summaryHeader));
       } else {
-        // Mengambil string base64 gambar dari res.data.image
+        // Tampilkan Gambar & Tabel dari Body JSON
         setResultMedia(res.data.image);
+        setSummary(res.data.summary);
       }
-      // Mengambil data tabel ringkasan
-      setSummary(res.data.summary || {});
-      
     } catch (err) {
-      console.error(err);
-      alert("Gagal memproses file. Pastikan Backend berjalan dan menggunakan JSONResponse.");
+      alert("Gagal memproses file.");
     } finally {
       setLoading(false);
     }
@@ -115,11 +111,11 @@ function App() {
           <div className="media-box">
             {resultMedia ? (
               fileType === 'video' ? (
-                <video 
-                  key={resultMedia} 
-                  src={resultMedia} 
-                  controls 
-                  autoPlay 
+                <video
+                  key={resultMedia}
+                  src={resultMedia}
+                  controls
+                  autoPlay
                 />
               ) : (
                 <img src={resultMedia} alt="Detected" />
@@ -159,12 +155,12 @@ function App() {
                   ))}
                 </tbody>
               </table>
-              
+
               {/* TOMBOL DOWNLOAD DINAMIS */}
               <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                <a 
-                  href={resultMedia} 
-                  download={fileType === 'video' ? "detected_lettuce.avi" : "detected_lettuce.jpg"} 
+                <a
+                  href={resultMedia}
+                  download={fileType === 'video' ? "detected_lettuce.avi" : "detected_lettuce.jpg"}
                   className="btn-download-link"
                 >
                   Download {fileType === 'video' ? "Video" : "Gambar"} Hasil

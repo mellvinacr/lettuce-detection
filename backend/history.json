@@ -1,0 +1,64 @@
+[
+    {
+        "id": 1,
+        "timestamp": "2025-12-29 15:29:45",
+        "fileName": "selada.jpeg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 2,
+        "timestamp": "2025-12-29 15:31:49",
+        "fileName": "images (3).jpg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 3,
+        "timestamp": "2025-12-29 15:32:15",
+        "fileName": "images (1).jpg",
+        "type": "image",
+        "results": {}
+    },
+    {
+        "id": 4,
+        "timestamp": "2025-12-29 15:33:41",
+        "fileName": "download (3).jpg",
+        "type": "image",
+        "results": {}
+    },
+    {
+        "id": 5,
+        "timestamp": "2025-12-29 15:33:52",
+        "fileName": "download (2).jpg",
+        "type": "image",
+        "results": {}
+    },
+    {
+        "id": 6,
+        "timestamp": "2025-12-29 15:34:56",
+        "fileName": "tanaman-selada.jpg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 7,
+        "timestamp": "2025-12-29 15:38:37",
+        "fileName": "download (4).jpg",
+        "type": "image",
+        "results": {}
+    },
+    {
+        "id": 8,
+        "timestamp": "2025-12-29 15:39:38",
+        "fileName": "WhatsApp Image 2025-12-29 at 3.39.04 PM.jpeg",
+        "type": "image",
+        "results": {}
+    }
+]

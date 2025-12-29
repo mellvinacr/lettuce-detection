@@ -6,19 +6,53 @@ from torchvision.models.detection import ssd
 from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.responses import JSONResponse, FileResponse
+# PERBAIKAN: Import JSONResponse agar tidak NameError
+from fastapi.responses import JSONResponse, FileResponse 
+from collections import Counter
 import cv2
 import numpy as np
 import base64
 import os
 import tempfile
-from collections import Counter
+import json
+import datetime
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# --- ARSITEKTUR MODEL (Sesuai Training Anda) ---
+# Konfigurasi CORS agar React bisa baca header kustom dan JSON
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Summary"] 
+)
+
+# Path file riwayat untuk menyimpan informasi hasil deteksi di backend
+HISTORY_FILE = os.path.join(os.path.dirname(__file__), "history.json")
+
+def save_to_history(filename, summary, media_type):
+    """Menyimpan hasil deteksi ke file JSON di backend"""
+    history_data = []
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE, "r") as f:
+                history_data = json.load(f)
+        except:
+            history_data = []
+
+    new_entry = {
+        "id": len(history_data) + 1,
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fileName": filename,
+        "type": media_type,
+        "results": summary
+    }
+    history_data.append(new_entry)
+    with open(HISTORY_FILE, "w") as f:
+        json.dump(history_data, f, indent=4)
+
+# --- ARSITEKTUR MODEL (Tetap Sesuai Training) ---
 class SSDExtraBlocks(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -73,12 +107,9 @@ model_path = os.path.join(os.path.dirname(__file__), "model", "best_model.pth")
 model_detection.load_state_dict(torch.load(model_path, map_location=device))
 model_detection.eval()
 
-# --- FUNGSI DRAWING (Mencegah Teks Terpotong) ---
 def draw_detections(img, prediction):
     h_orig, w_orig = img.shape[:2]
     detected_labels = []
-    
-    # Skala font otomatis sesuai resolusi gambar
     font_scale = max(0.6, w_orig / 1000)
     thickness = max(2, int(w_orig / 500))
 
@@ -87,44 +118,40 @@ def draw_detections(img, prediction):
             x1, y1, x2, y2 = box.int().tolist()
             name = CLASS_NAMES[label.item()]
             detected_labels.append(name)
-            
             color = (0, 255, 0) if name == 'healthy' else (0, 0, 255)
             cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness * 2)
-            
             label_txt = f"{name} {score:.2f}"
             (w_txt, h_txt), baseline = cv2.getTextSize(label_txt, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
-            
-            # Logika agar teks tidak keluar frame atas
             text_y = y1 + h_txt + 10 if y1 - h_txt - 15 < 0 else y1 - 10
-            
             cv2.rectangle(img, (x1, text_y - h_txt - 5), (x1 + w_txt, text_y + baseline), color, -1)
             cv2.putText(img, label_txt, (x1, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
-            
     return img, detected_labels
 
-# --- ENDPOINT GAMBAR ---
+# --- ENDPOINTS ---
+
 @app.post("/detect")
 async def detect_image(file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
     img_tensor = T.ToTensor()(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).to(device)
     with torch.no_grad():
         prediction = model_detection([img_tensor])[0]
-
-    img, labels = draw_detections(img, prediction)
-    _, buffer = cv2.imencode('.jpg', img)
     
-    return {
+    img, labels = draw_detections(img, prediction)
+    summary = dict(Counter(labels))
+    
+    # Simpan informasi ke JSON di backend
+    save_to_history(file.filename, summary, "image")
+    
+    _, buffer = cv2.imencode('.jpg', img)
+    return JSONResponse(content={
         "image": f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}",
-        "summary": dict(Counter(labels))
-    }
+        "summary": summary
+    })
 
-# --- 2. ENDPOINT DETEKSI VIDEO YANG DIPERBAIKI ---
 @app.post("/detect-video")
 async def detect_video(file: UploadFile = File(...)):
-    # Simpan input sementara
     temp_in = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     temp_in.write(await file.read())
     temp_in_path = temp_in.name
@@ -135,41 +162,46 @@ async def detect_video(file: UploadFile = File(...)):
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps    = cap.get(cv2.CAP_PROP_FPS)
 
-    # Gunakan Codec XVID (.avi) agar stabil tanpa OpenH264
-    temp_out_path = temp_in_path + "_out.avi"
-    fourcc = cv2.VideoWriter_fourcc(*'XVID') 
+    temp_out_path = temp_in_path + "_out.mp4"
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
     out = cv2.VideoWriter(temp_out_path, fourcc, fps, (width, height))
 
     all_labels = []
-
     try:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret: break
-            
-            # Deteksi frame (Gunakan fungsi draw_detections Anda)
             img_t = T.ToTensor()(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).to(device)
             with torch.no_grad():
                 pred = model_detection([img_t])[0]
-            
             frame, labels_in_frame = draw_detections(frame, pred)
             all_labels.extend(labels_in_frame)
             out.write(frame)
     finally:
-        # Lepaskan kunci file agar tidak PermissionError
+        # PERBAIKAN: Melepaskan file agar tidak WinError 32
         cap.release()
         out.release()
 
-    # Baca hasil deteksi dan ubah ke Base64 agar bisa dikirim via JSON
-    with open(temp_out_path, "rb") as v_file:
-        v_encoded = base64.b64encode(v_file.read()).decode('utf-8')
-
-    # Bersihkan file fisik
+    summary_data = dict(Counter(all_labels))
+    
+    # Simpan informasi ke JSON di backend
+    save_to_history(file.filename, summary_data, "video")
+    
     if os.path.exists(temp_in_path): os.remove(temp_in_path)
-    if os.path.exists(temp_out_path): os.remove(temp_out_path)
 
-    # Kirim respons JSON yang mengandung Video dan Summary
-    return JSONResponse(content={
-        "video": f"data:video/x-msvideo;base64,{v_encoded}",
-        "summary": dict(Counter(all_labels))
-    })
+    return FileResponse(
+        temp_out_path, 
+        media_type="video/mp4",
+        headers={
+            "X-Summary": json.dumps(summary_data),
+            "Access-Control-Expose-Headers": "X-Summary" 
+        }
+    )
+
+@app.get("/history")
+async def get_history():
+    """Melihat riwayat deteksi yang tersimpan di backend"""
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "r") as f:
+            return json.load(f)
+    return {"message": "Belum ada riwayat deteksi"}

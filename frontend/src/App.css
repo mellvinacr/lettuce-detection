@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
 :root {
   --primary: #2ecc71;
@@ -177,3 +177,151 @@ body {
 @media (max-width: 1000px) {
   .main-grid { grid-template-columns: 1fr; }
 }
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.btn {
+  padding: 12px 25px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.btn-green { background-color: #4CAF50; }
+.btn-blue { background-color: #2196F3; }
+.btn-purple { background-color: #9C27B0; }
+
+.btn:hover {
+  transform: scale(1.05);
+}
+
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: rgba(0, 255, 0, 0.7);
+  box-shadow: 0 0 15px 5px rgba(0, 255, 0, 0.5);
+  animation: scan 2s linear infinite;
+  z-index: 10;
+}
+
+@keyframes scan {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+/* Animasi Laser Scan */
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(to right, transparent, #4CAF50, transparent);
+  box-shadow: 0 0 8px 2px rgba(76, 175, 80, 0.5);
+  animation: scanning 3s ease-in-out infinite;
+  z-index: 11;
+}
+
+@keyframes scanning {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+/* Badge colors */
+.badge-green { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.badge-red { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+
+/* App.css - Modern Dashboard Style */
+:root {
+  --bg-main: #f4f7f9;
+  --primary-green: #2e7d32;
+  --secondary-blue: #3498db;
+  --text-dark: #334155;
+  --shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.dashboard-container {
+  background-color: var(--bg-main);
+  min-height: 100vh;
+  padding: 30px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  color: var(--text-dark);
+  margin-bottom: 5px;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 25px;
+  margin-bottom: 25px;
+}
+
+.upload-zone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover {
+  border-color: var(--secondary-blue);
+  background-color: #f1f5f9;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 25px;
+}
+
+.badge-status {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.badge-analyzed { background: #e8f5e9; color: #2e7d32; }
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modern-table th {
+  text-align: left;
+  padding: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.modern-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid #f1f5f9;
+} 

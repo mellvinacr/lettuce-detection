@@ -10817,5 +10817,142 @@
         "results": {
             "healthy": 1
         }
+    },
+    {
+        "id": 1378,
+        "timestamp": "2026-01-04 13:03:44",
+        "fileName": "download (4).jpg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 1379,
+        "timestamp": "2026-01-04 13:04:00",
+        "fileName": "images (1).jpg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 1380,
+        "timestamp": "2026-01-04 13:04:16",
+        "fileName": "images (4).jpg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 1381,
+        "timestamp": "2026-01-04 13:04:32",
+        "fileName": "images (3).jpg",
+        "type": "image",
+        "results": {
+            "Septoria_Blight": 1,
+            "Wilt_leaf_blight": 1,
+            "healthy": 2
+        }
+    },
+    {
+        "id": 1382,
+        "timestamp": "2026-01-05 11:44:14",
+        "fileName": "WhatsApp Video 2026-01-05 at 9.31.36 AM.mp4",
+        "type": "video",
+        "results": {
+            "healthy": 18
+        }
+    },
+    {
+        "id": 1383,
+        "timestamp": "2026-01-05 12:24:57",
+        "fileName": "WhatsApp Video 2026-01-05 at 9.31.36 AM.mp4",
+        "type": "video",
+        "results": {
+            "healthy": 18
+        }
+    },
+    {
+        "id": 1384,
+        "timestamp": "2026-01-05 12:38:35",
+        "fileName": "WhatsApp Video 2026-01-05 at 9.31.36 AM.mp4",
+        "type": "video",
+        "results": {
+            "healthy": 18
+        }
+    },
+    {
+        "id": 1385,
+        "timestamp": "2026-01-05 12:41:08",
+        "fileName": "WhatsApp Video 2026-01-05 at 9.48.22 AM.mp4",
+        "type": "video",
+        "results": {
+            "Bacterial": 30,
+            "Powdery_mildew": 33
+        }
+    },
+    {
+        "id": 1386,
+        "timestamp": "2026-01-10 12:18:37",
+        "fileName": "selada.jpeg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 1387,
+        "timestamp": "2026-01-10 12:18:58",
+        "fileName": "download (3).jpg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 1388,
+        "timestamp": "2026-01-10 12:19:19",
+        "fileName": "images (4).jpg",
+        "type": "image",
+        "results": {
+            "healthy": 1
+        }
+    },
+    {
+        "id": 1389,
+        "timestamp": "2026-01-10 12:21:17",
+        "fileName": "Penyebab bercak hitam selada #shorts #urbanfarming #berkebun #petani #desa #selada #hidroponik - NDY Farm (720p, h264).mp4",
+        "type": "video",
+        "results": {
+            "Septoria_Blight": 27,
+            "healthy": 125,
+            "Viral": 282
+        }
+    },
+    {
+        "id": 1390,
+        "timestamp": "2026-01-10 12:24:34",
+        "fileName": "detected_lettuce (3).mp4",
+        "type": "video",
+        "results": {
+            "Powdery_mildew": 38,
+            "Bacterial": 3,
+            "Septoria_Blight": 15,
+            "healthy": 1
+        }
+    },
+    {
+        "id": 1391,
+        "timestamp": "2026-01-10 23:33:47",
+        "fileName": "detected_lettuce (3).mp4",
+        "type": "video",
+        "results": {
+            "Powdery_mildew": 38,
+            "Bacterial": 3,
+            "Septoria_Blight": 15,
+            "healthy": 1
+        }
     }
 ]

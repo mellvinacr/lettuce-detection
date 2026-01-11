@@ -111,5 +111,15 @@
             "Bacterial": 30,
             "Powdery_mildew": 33
         }
+    },
+    {
+        "id": 12,
+        "timestamp": "2026-01-11 17:53:17",
+        "fileName": "Detection_20260111_175317.mp4",
+        "type": "video",
+        "results": {
+            "Bacterial": 1,
+            "Wilt_leaf_blight": 79
+        }
     }
 ]

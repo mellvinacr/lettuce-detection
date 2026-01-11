@@ -3,25 +3,30 @@ import streamlit as st
 def apply_custom_css():
     st.markdown("""
         <style>
-        /* 1. Base App Styling */
+        /* 1. Base App Styling - Hijau Mint Pucat (Sangat Jernih) */
         .stApp {
-            background-color: #f1f5f9;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0fdf4; 
+            font-family: 'Inter', -apple-system, sans-serif;
         }
 
-        /* 2. Sidebar Styling */
+        /* 2. Sidebar Styling - Putih Bersih agar tetap kontras */
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+            background-color: #f0f2f6 !important;
+            border-right: 1px solid #dcfce7 !important;
+        }
+        
+        iframe[title="streamlit_option_menu.option_menu"] {
+            background-color: transparent !important;
         }
 
-        /* 3. Hero Card Styling */
+        /* 3. Hero Card - Putih dengan aksen Hijau Muda */
         .hero-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border-radius: 24px;
-            padding: 40px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 35px;
             margin-bottom: 32px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 25px rgba(22, 163, 74, 0.05);
+            border: 1px solid #dcfce7;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -30,82 +35,68 @@ def apply_custom_css():
 
         .ai-badge {
             display: inline-block;
-            padding: 8px 16px;
-            background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(0, 188, 212, 0.05) 100%);
-            border-radius: 100px;
+            padding: 6px 14px;
+            background: #dcfce7; /* Hijau Muda Cerah */
+            border-radius: 8px;
             margin-bottom: 16px;
-            border: 1px solid rgba(0, 188, 212, 0.2);
-            color: #00838f;
-            font-size: 13px;
+            color: #166534; 
+            font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
-        /* 4. Method Card & Navigation Logic */
+        /* 4. Method Card - Clean White dengan Hover Hijau */
         .method-card {
-            background: white;
+            background: #ffffff;
             padding: 28px;
-            border-radius: 20px;
-            border: 2px solid #e2e8f0;
+            border-radius: 18px;
+            border: 1px solid #eef2ef;
             transition: all 0.3s ease;
             position: relative;
-            cursor: pointer;
         }
 
         .method-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+            border-color: #4ade80;
+            background: #f0fdf4;
+            transform: translateY(-5px);
         }
 
-        /* TOMBOL NAVIGASI: Hanya targetkan tombol dengan label "Go" (key di app) */
-        /* Kita menggunakan selektor yang tidak mengganggu tombol deteksi */
-        .stButton > button[p-styled="false"], 
-        div[p-styled="false"] > button {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent !important;
-            border: none !important;
-            color: transparent !important;
-            z-index: 10;
+        /* Navigasi Overlay Transparan */
+        .stButton > button[p-styled="false"] {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent !important; border: none !important;
+            color: transparent !important; z-index: 10;
         }
 
-        /* 5. Start Detection Button (Targeted by Kind Primary) */
-        /* Menyesuaikan dengan tampilan Gambar 2 (Biru Cerah/Cyan) */
+        /* 5. Action Buttons - Hijau Emerald (Vibran namun tetap Soft) */
         div.stButton > button[kind="primary"] {
-            background: linear-gradient(135deg, #00bcd4 0%, #00acc1 100%) !important;
+            background: #22c55e !important;
             color: white !important;
             border-radius: 12px !important;
             border: none !important;
-            padding: 0.6rem 2rem !important;
-            font-weight: 700 !important;
-            box-shadow: 0 4px 14px rgba(0, 188, 212, 0.39) !important;
-            transition: all 0.2s ease !important;
-            position: relative !important; /* Kembalikan ke posisi normal */
+            padding: 0.6rem 1.5rem !important;
+            font-weight: 600 !important;
             width: 100% !important;
-            height: auto !important;
-            visibility: visible !important;
-            color: white !important;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2) !important;
         }
 
         div.stButton > button[kind="primary"]:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 20px rgba(0, 188, 212, 0.5) !important;
-            background: #00acc1 !important;
+            background: #16a34a !important;
+            box-shadow: 0 6px 15px rgba(34, 197, 94, 0.3) !important;
         }
 
-        /* 6. Summary Card Styling */
-        .summary-card {
-            background: #1e293b;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
+        /* Metric & Tipografi - Warna Hijau Hutan Tua */
+        [data-testid="stMetricValue"] {
+            color: #166534 !important;
+        }
+        
+        h1, h2, h3, h4 {
+            color: #14532d !important; /* Hijau Gelap Jernih */
+        }
+        
+        p {
+            color: #166534 !important;
         }
         </style>
     """, unsafe_allow_html=True)

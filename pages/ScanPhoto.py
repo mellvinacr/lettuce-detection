@@ -6,10 +6,19 @@ import torchvision.transforms as T
 import cv2
 import numpy as np
 import io
+import base64
 
 # Mengimpor fungsi dan loader dari folder core Anda
 from core.processor import draw_detections
 from core.model_loader import load_detection_model
+
+def get_base64_image(image_path):
+    """Fungsi pembantu untuk konversi gambar ke base64"""
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except:
+        return ""
 
 def get_risk_status(summary):
     """Meniru logika getDetectionStatus dari React"""
@@ -39,22 +48,28 @@ def show():
     st.title("Photo Disease Detection")
     st.markdown("<p style='color: #64748b;'>Upload lettuce photos for AI-powered disease analysis</p>", unsafe_allow_html=True)
 
+    # --- KONVERSI GAMBAR UNTUK HERO CARD ---
+    # Ganti path ini sesuai lokasi file lettuce.jpeg Anda
+    image_path = "D:/Semester 5/Comvis/lettuce_detection/components/lettuce.jpeg"
+    img_base64 = get_base64_image(image_path)
+
     # --- HERO CARD ---
-    st.markdown("""
+    st.markdown(f"""
         <div class="hero-card">
             <div style="flex: 1;">
                 <div class="ai-badge">AI POWER DETECTION</div>
-                <h2 style="color: #0f172a; font-weight: 800; margin-bottom: 12px;">Analisis Gambar dengan Computer Vision</h2>
-                <p style="color: #64748b;">Sistem akan mendeteksi objek pada gambar dengan hasil yang cepat dan akurat.</p>
+                <h2 style="color: #14532d; font-weight: 800; margin-bottom: 12px;">Analisis Gambar dengan Computer Vision</h2>
+                <p style="color: #166534;">Sistem akan mendeteksi objek pada gambar dengan hasil yang cepat dan akurat.</p>
                 <div style="display: flex; gap: 12px; margin-top: 15px;">
-                    <span style="padding: 8px 16px; background: rgba(16, 185, 129, 0.1); color: #065f46; border-radius: 12px; font-size: 13px; font-weight: 600;">✓ Object Detection</span>
-                    <span style="padding: 8px 16px; background: rgba(0, 188, 212, 0.1); color: #00838f; border-radius: 12px; font-size: 13px; font-weight: 600;">✓ Bounding Box</span>
+                    <span style="padding: 8px 16px; background: #dcfce7; color: #166534; border-radius: 12px; font-size: 13px; font-weight: 600;">✓ Object Detection</span>
+                    <span style="padding: 8px 16px; background: rgba(34, 197, 94, 0.1); color: #166534; border-radius: 12px; font-size: 13px; font-weight: 600;">✓ Bounding Box</span>
                 </div>
             </div>
-            <h1 style="font-size: 80px; margin: 0;">🖼️</h1>
+            <div style="width: 280px; height: 280px; border-radius: 24px; overflow: hidden; border: 4px solid white; box-shadow: 0 20px 40px rgba(34, 197, 94, 0.15);">
+                <img src="data:image/jpeg;base64,{img_base64}" style="width: 100%; height: 100%; object-fit: cover;" alt="Lettuce Mascot">
+            </div>
         </div>
     """, unsafe_allow_html=True)
-
 
     uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"], key="photo_scanner", label_visibility="collapsed")
 
@@ -65,7 +80,6 @@ def show():
             st.subheader("Image Preview")
             st.image(uploaded_file, use_container_width=True)
             
-            # Button dengan type="primary" agar dideteksi oleh CSS khusus di styles.py
             if st.button("🔍 Start Detection", use_container_width=True, type="primary"):
                 with st.spinner("Analyzing..."):
                     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
@@ -77,11 +91,9 @@ def show():
                     with torch.no_grad():
                         prediction = model_detection([img_t])[0]
                     
-                    # res_img mengandung Bounding Box dari core/processor.py
                     res_img, labels_list = draw_detections(img, prediction, CLASS_NAMES)
                     summary = dict(Counter(labels_list))
                     
-                    # Konversi untuk display (RGB) & download (BGR asli)
                     final_rgb = cv2.cvtColor(res_img, cv2.COLOR_BGR2RGB)
                     _, buffer = cv2.imencode('.jpg', res_img)
                     
@@ -99,7 +111,6 @@ def show():
                 st.subheader("Detection Result")
                 st.image(res_data['img'], use_container_width=True)
                 
-                # Fitur Download Hasil
                 st.download_button(
                     label="📥 Download Result Image",
                     data=res_data['download_bytes'],
@@ -108,7 +119,6 @@ def show():
                     use_container_width=True
                 )
 
-                # Render Risk Badge
                 st.markdown(f"""
                     <div style="padding: 12px; background: {risk['bg']}; border-radius: 12px; border-left: 5px solid {risk['color']}; margin-top: 10px;">
                         <h4 style="color: {risk['color']}; margin: 0;">{risk['status']}</h4>
@@ -116,7 +126,6 @@ def show():
                     </div>
                 """, unsafe_allow_html=True)
 
-            # Bagian Summary bawah
             st.write("---")
             sum_col1, sum_col2 = st.columns(2)
             

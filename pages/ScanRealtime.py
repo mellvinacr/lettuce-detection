@@ -2,15 +2,20 @@ import streamlit as st
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 from core.model_loader import load_detection_model
 from core.processor import RealTimeProcessor
+import time
+import os
+import datetime
+
+# Fungsi simpan log (sama dengan yang ada di ScanVideo)
+from pages.ScanVideo import save_to_history 
 
 def show():
-    # 1. Load Model Resources (Cached)
+    # 1. Memuat model dan resources
     model, classes, device = load_detection_model()
     
     st.title("Real-time Disease Detection")
-    st.markdown("<p style='color: #64748b;'>Live webcam monitoring with AI-powered disease detection</p>", unsafe_allow_html=True)
-
-    # 2. Hero Card
+    
+    # 2. Hero Card (Visual Header)
     st.markdown("""
         <div class="hero-card">
             <div style="flex: 1;">
@@ -25,13 +30,11 @@ def show():
             <h1 style="font-size: 80px; margin: 0;">📷</h1>
         </div>
     """, unsafe_allow_html=True)
-
+    
     col1, col2 = st.columns([2, 1])
 
     with col1:
         st.markdown("""<div class="summary-card">📹 Visual Detection Feed</div>""", unsafe_allow_html=True)
-        
-        # 3. WebRTC Streamer dengan RealTimeProcessor
         ctx = webrtc_streamer(
             key="lettuce-realtime",
             mode=WebRtcMode.SENDRECV,
@@ -41,52 +44,63 @@ def show():
         )
 
     with col2:
-        st.markdown("""<div class="summary-card">📊 Detection Log Summary</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="summary-card">📊 Detection Log & Tools</div>""", unsafe_allow_html=True)
         
-        # Placeholder untuk Log Dinamis (Mirip gambar image_fa346b.jpg)
-        log_placeholder = st.empty()
-        
-        # Logika Penampilan Log dari Processor
         if ctx.video_processor:
-            # Ambil data deteksi terbaru dari variabel di dalam RealTimeProcessor
-            # Pastikan di core/processor.py Anda memiliki self.latest_detections = {}
-            latest_results = getattr(ctx.video_processor, 'latest_detections', {})
+            # PERBAIKAN: Menggunakan satu variabel container untuk kolom tunggal agar tidak ValueError
+            rec_area = st.container()
             
-            if latest_results:
-                with log_placeholder.container():
-                    st.markdown("""
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">
-                            <span>CLASSIFICATION</span>
-                            <span>QTY</span>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    for label, qty in latest_results.items():
-                        bg_color = "rgba(16, 185, 129, 0.1)" if label.lower() == "healthy" else "rgba(239, 68, 68, 0.1)"
-                        text_color = "#065f46" if label.lower() == "healthy" else "#ef4444"
-                        
-                        st.markdown(f"""
-                            <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #f1f5f9;">
-                                <span style="background: {bg_color}; color: {text_color}; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
-                                    {label}
-                                </span>
-                                <span style="font-weight: 800; color: #1e293b;">{qty}</span>
-                            </div>
-                        """, unsafe_allow_html=True)
-            else:
-                log_placeholder.info("Mencari objek selada...")
-        else:
-            st.warning("Webcam Offline. Klik 'Start' untuk memulai.")
+            with rec_area:
+                if not ctx.video_processor.recording:
+                    # Tombol Start Record
+                    if st.button("🔴 Start Record", use_container_width=True):
+                        ctx.video_processor.start_recording(640, 480)
+                        st.rerun()
+                else:
+                    # Tombol Stop & Save dengan gaya Primary
+                    if st.button("⏹️ Stop & Save", use_container_width=True, type="primary"):
+                        with st.spinner("Processing Record..."):
+                            path, summary = ctx.video_processor.stop_recording()
+                            
+                            # Membuat nama file berdasarkan waktu rekaman
+                            timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                            custom_filename = f"Detection_{timestamp_str}.mp4"
+                            
+                            # Simpan ke history.json menggunakan nama file baru
+                            save_to_history(custom_filename, summary)
+                            
+                            # Konversi codec agar bisa didownload (H.264)
+                            final_path = path.replace(".mp4", f"_{timestamp_str}_final.mp4")
+                            os.system(f"ffmpeg -i {path} -vcodec libx264 -f mp4 {final_path} -y -loglevel quiet")
+                            
+                            with open(final_path, "rb") as f:
+                                st.download_button(
+                                    label="📥 Download Record", 
+                                    data=f, 
+                                    file_name=custom_filename,
+                                    mime="video/mp4", 
+                                    use_container_width=True
+                                )
+                            st.success(f"Log disimpan sebagai {custom_filename}!")
 
-        # Info Box (Cara Menggunakan)
-        st.markdown("""
-            <div style="background: rgba(59, 130, 246, 0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(59, 130, 246, 0.15); margin-top: 20px;">
-                <h5 style="color: #1e293b; margin-top:0;">💡 Cara Menggunakan</h5>
-                <p style="color: #64748b; font-size: 13px; margin:0; line-height: 1.5;">
-                    Klik tombol <b>Start</b> pada jendela feed untuk mengaktifkan kamera. 
-                    <br><br>
-                    <span style="color: #10b981; font-weight: bold;">● Healthy:</span> Kondisi Optimal<br>
-                    <span style="color: #ef4444; font-weight: bold;">● Disease:</span> Perlu Penanganan
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+            # --- DISPLAY LOG REALTIME ---
+            log_placeholder = st.empty()
+            while ctx.state.playing:
+                # Mengambil data deteksi terbaru dari variabel di dalam RealTimeProcessor
+                latest_results = getattr(ctx.video_processor, 'latest_detections', {})
+                with log_placeholder.container():
+                    if latest_results:
+                        for label, qty in latest_results.items():
+                            # Menentukan warna border berdasarkan status kesehatan tanaman
+                            status_color = '#10b981' if label.lower() == 'healthy' else '#ef4444'
+                            st.markdown(f"""
+                                <div style="display: flex; justify-content: space-between; background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid {status_color}; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                    <span style="font-weight: 600;">{label}</span>
+                                    <span style="font-weight: 800;">{qty}</span>
+                                </div>
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.info("Mencari objek...")
+                time.sleep(1)
+        else:
+            st.warning("Webcam Offline")

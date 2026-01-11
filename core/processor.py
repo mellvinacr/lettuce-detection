@@ -8,24 +8,43 @@ import av
 from collections import Counter
 
 def draw_detections(img, prediction, class_names):
-    """Fungsi standar untuk menggambar bounding box tebal dan teks"""
+    """Fungsi dengan perbaikan visibilitas bounding box agar tidak terpotong"""
     detected_labels = []
-    # Ketebalan kotak 4 dan font 0.7 dengan thickness 3 agar terlihat jelas
+    h, w, _ = img.shape # Ambil dimensi gambar untuk pembatasan koordinat
+
     for box, label, score in zip(prediction['boxes'], prediction['labels'], prediction['scores']):
         if score > 0.4:
-            x1, y1, x2, y2 = map(int, box)
+            # Pastikan koordinat box tidak keluar dari batas gambar (clamping)
+            x1 = max(0, int(box[0]))
+            y1 = max(0, int(box[1]))
+            x2 = min(w, int(box[2]))
+            y2 = min(h, int(box[3]))
+            
             name = class_names[label.item()]
             detected_labels.append(name)
             
-            # Hijau untuk sehat (Healthy), Merah untuk penyakit (Disease)
-            # Menyesuaikan dengan logika warna pada desain UI Anda
+            # Warna kontras: Hijau (Sehat) atau Merah (Penyakit)
             color = (0, 255, 0) if name.lower() == 'healthy' else (0, 0, 255)
             
-            cv2.rectangle(img, (x1, y1), (x2, y2), color, 4) 
-            cv2.putText(img, f"{name} {score:.2f}", (x1, y1-10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 3)
+            # --- PENINGKATAN VISIBILITAS ---
+            # 1. Gunakan ketebalan (thickness) minimal 4 atau 5 untuk garis
+            cv2.rectangle(img, (x1, y1), (x2, y2), color, 5) 
+            
+            # 2. Tambahkan background untuk teks label agar terbaca jelas
+            label_text = f"{name} {score:.2f}"
+            (t_w, t_h), _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
+            
+            # Atur posisi label: jika objek terlalu di atas, taruh label di dalam kotak
+            text_y = y1 - 10 if y1 - 10 > t_h else y1 + t_h + 10
+            
+            # Gambar background hitam di belakang teks (opsional, untuk kontras maksimal)
+            cv2.rectangle(img, (x1, text_y - t_h - 5), (x1 + t_w, text_y + 5), color, -1)
+            
+            # Tulis teks putih di atas background warna
+            cv2.putText(img, label_text, (x1, text_y), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                        
     return img, detected_labels
-
 def process_video_in_memory(input_path, model, device, class_names):
     """Logika Video Analysis: In-Memory & Auto-Cleanup"""
     temp_final = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
@@ -66,30 +85,48 @@ def process_video_in_memory(input_path, model, device, class_names):
     return video_bytes, dict(Counter(all_labels))
 
 class RealTimeProcessor:
-    """Logika Real-time: Processing stream frame demi frame"""
     def __init__(self, model, device, class_names):
         self.model = model
         self.device = device
         self.class_names = class_names
-        # VARIABEL BARU: Untuk menyimpan log deteksi terbaru yang akan ditampilkan di UI
-        self.latest_detections = {} 
+        self.latest_detections = {}
+        self.all_frame_labels = [] # Untuk log akumulasi
+        
+        # Logika Rekaman
+        self.recording = False
+        self.out = None
+        self.temp_path = None
+
+    def start_recording(self, width, height, fps=20.0):
+        self.temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self.out = cv2.VideoWriter(self.temp_path, fourcc, fps, (width, height))
+        self.recording = True
+        self.all_frame_labels = [] # Reset log saat mulai rekam
+
+    def stop_recording(self):
+        self.recording = False
+        if self.out:
+            self.out.release()
+            self.out = None
+        return self.temp_path, dict(Counter(self.all_frame_labels))
 
     def recv(self, frame):
-        # Konversi frame WebRTC ke format ndarray (BGR)
         img = frame.to_ndarray(format="bgr24")
-        
-        # Preprocessing gambar untuk model SSD
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_tensor = T.ToTensor()(img_rgb).to(self.device)
         
         with torch.no_grad():
             prediction = self.model([img_tensor])[0]
         
-        # Gambar deteksi dan tangkap label yang muncul di frame saat ini
         img_result, labels = draw_detections(img, prediction, self.class_names)
         
-        # Update log summary secara real-time untuk ditampilkan di kolom ScanRealtime
+        # Update UI Log (Realtime)
         self.latest_detections = dict(Counter(labels))
         
-        # Kembalikan frame yang sudah diproses ke feed video
+        # Jika sedang merekam, simpan frame dan akumulasi log
+        if self.recording and self.out:
+            self.out.write(img_result)
+            self.all_frame_labels.extend(labels)
+            
         return av.VideoFrame.from_ndarray(img_result, format="bgr24")

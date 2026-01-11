@@ -3,6 +3,7 @@ import tempfile
 import os
 import datetime
 import json
+import time # Tambahkan import time untuk simulasi transisi status
 import numpy as np
 from core.processor import process_video_in_memory
 from core.model_loader import load_detection_model
@@ -38,7 +39,7 @@ def show():
     st.title("Video Disease Detection")
     st.markdown("<p style='color: #64748b;'>Analisis video selada menggunakan AI-powered detection</p>", unsafe_allow_html=True)
 
-    # 2. Hero Card (Desain Modern Selaras Dashboard)
+    # 2. Hero Card
     st.markdown("""
         <div class="hero-card">
             <div style="flex: 1;">
@@ -54,11 +55,9 @@ def show():
         </div>
     """, unsafe_allow_html=True)
 
-
     uploaded_file = st.file_uploader("", type=["mp4", "mov", "avi"], key="video_scanner")
 
     if uploaded_file:
-        # Gunakan tempfile agar OpenCV bisa membaca file path
         tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         tfile.write(uploaded_file.read())
         tfile_path = tfile.name
@@ -70,18 +69,33 @@ def show():
             st.subheader("Video Preview")
             st.video(tfile_path)
             
-            # Tombol Start Analysis dengan Type Primary (Warna Ungu diatur di styles.py)
             if st.button("🚀 Start Analysis", use_container_width=True, type="primary"):
-                with st.spinner("● AI is Scanning Frames..."):
-                    # Proses In-Memory
-                    video_bytes, summary = process_video_in_memory(tfile_path, model, device, classes)
-                    
-                    # Simpan ke riwayat JSON
-                    save_to_history(uploaded_file.name, summary)
+                # --- PERBAIKAN: PROGRESS & STATUS INDICATOR ---
+                with st.container():
+                    # Menggunakan st.status untuk memberikan detail proses
+                    with st.status("🎬 Inisialisasi AI Engine...", expanded=True) as status:
+                        progress_bar = st.progress(0)
+                        
+                        time.sleep(0.5)
+                        status.update(label="🔍 Memindai Frame Video...")
+                        st.write("Menganalisis kesehatan tanaman per frame...")
+                        progress_bar.progress(30)
+                        
+                        # Proses Deteksi Sebenarnya
+                        video_bytes, summary = process_video_in_memory(tfile_path, model, device, classes)
+                        
+                        progress_bar.progress(80)
+                        status.update(label="💾 Menyimpan Hasil Analisis...", state="running")
+                        st.write("Mencatat data ke riwayat deteksi...")
+                        save_to_history(uploaded_file.name, summary)
+                        
+                        time.sleep(0.5)
+                        progress_bar.progress(100)
+                        status.update(label="✅ Analisis Selesai!", state="complete", expanded=False)
                     
                     # Simpan ke session state agar persisten
                     st.session_state.video_result = {"bytes": video_bytes, "summary": summary}
-                    st.success("Analysis Complete & Saved to History!")
+                    st.rerun()
 
         # 4. Result Section
         if "video_result" in st.session_state:
@@ -121,6 +135,5 @@ def show():
                     </div>
                 """, unsafe_allow_html=True)
 
-        # 6. Pembersihan file input
         if os.path.exists(tfile_path):
             os.remove(tfile_path)
